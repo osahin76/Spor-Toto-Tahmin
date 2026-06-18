@@ -3,6 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Spor Toto">
+<meta name="theme-color" content="#1D9E75">
+<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231D9E75'/><text y='.9em' font-size='80'>🏆</text></svg>">
 <title>Spor Toto Tahmin</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
@@ -120,7 +125,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
     <input type="password" id="apiKey" placeholder="sk-ant-..." oninput="saveKey()" />
     <button class="btn btn-gray btn-sm" onclick="toggleKey()">👁</button>
   </div>
-  <div class="api-hint">Tarayıcınıza kaydedilir · <a href="https://console.anthropic.com/account/keys" target="_blank" style="color:#1D9E75">console.anthropic.com</a></div>
+  <div class="api-hint">Sunucu key'i aktif — kendi key'inizi de girebilirsiniz · <a href="https://console.anthropic.com/account/keys" target="_blank" style="color:#1D9E75">console.anthropic.com</a></div>
 </div>
 
 <div class="controls">
@@ -174,12 +179,12 @@ let matches = [], predictions = [], keyVisible = false;
 window.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('st_api_key');
   if (saved) { document.getElementById('apiKey').value = saved; updateApiDot(true); }
-  else { document.getElementById('apiPanel').classList.add('open'); updateApiDot(false); }
+  else { updateApiDot(true); } // sunucu key'i var, panel kapalı kalır
 });
 
 function updateApiDot(ok) {
   document.getElementById('apiDot').style.background = ok ? '#4ade80' : '#f87171';
-  document.getElementById('apiLabel').textContent = ok ? 'API ✓' : 'API Gir';
+  document.getElementById('apiLabel').textContent = 'API ✓';
 }
 function toggleApiPanel() { document.getElementById('apiPanel').classList.toggle('open'); }
 function saveKey() {
@@ -191,9 +196,7 @@ function toggleKey() {
   document.getElementById('apiKey').type = keyVisible ? 'text' : 'password';
 }
 function getKey() {
-  const k = document.getElementById('apiKey').value.trim();
-  if (!k) { document.getElementById('apiPanel').classList.add('open'); setStatus('Lütfen API anahtarınızı girin.', 'error'); return null; }
-  return k;
+  return document.getElementById('apiKey').value.trim() || '__server__';
 }
 
 function cacheKey() { return 'st_matches_v2'; }
@@ -240,11 +243,12 @@ function setStatus(msg, type) {
 }
 
 async function callClaude(key, body) {
-  const resp = await fetch('http://localhost:8000/api/claude', {
+  const baseUrl = window.location.origin === 'null' || window.location.hostname === 'localhost' ? 'http://localhost:8000' : window.location.origin;
+  const resp = await fetch(baseUrl + '/api/claude', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': key,
+      'x-api-key': key || '',
       'anthropic-version': '2023-06-01',
       'anthropic-beta': 'web-search-2025-03-05'
     },
