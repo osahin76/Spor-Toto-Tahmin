@@ -23,8 +23,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if self.path == '/api/claude':
             length = int(self.headers.get('Content-Length', 0))
             body = self.rfile.read(length)
-            # Header'dan gelen key varsa kullan, yoksa env variable
-            api_key = self.headers.get('x-api-key', '') or ANTHROPIC_API_KEY
+            # Gelen key'i kontrol et - boş, __server__ veya geçersizse env'den kullan
+            client_key = self.headers.get('x-api-key', '').strip()
+            if not client_key or client_key == '__server__' or not client_key.startswith('sk-ant-'):
+                api_key = ANTHROPIC_API_KEY
+            else:
+                api_key = client_key
             beta = self.headers.get('anthropic-beta', '')
             req = urllib.request.Request(
                 'https://api.anthropic.com/v1/messages',
@@ -60,6 +64,6 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 print(f"Spor Toto Tahmin: http://0.0.0.0:{PORT}")
-print(f"API Key: {'✓ ENV variable' if ANTHROPIC_API_KEY else '✗ Girilmedi'}")
+print(f"API Key: {'✓ ENV aktif' if ANTHROPIC_API_KEY else '✗ ENV bos'}")
 httpd = http.server.HTTPServer(('0.0.0.0', PORT), Handler)
 httpd.serve_forever()
